@@ -27,7 +27,7 @@ def inicializar_session_state():
         st.session_state.parametros = {
             'patron_basico_consecutivos': 5,
             'docenas_consecutivos': 10,
-            'numeros_especificos_consecutivos': 5
+            'numeros_especificos_consecutivos': 8
         }
 
 def obtener_propiedades_numero(numero):
@@ -285,7 +285,7 @@ def main():
         # Mostrar últimos números
         if st.session_state.numeros_registrados:
             st.subheader("🔢 Últimos 10 Números")
-            ultimos = st.session_state.numeros_registrados[-10:]
+            ultimos = st.session_state.numeros_registrados[-20:]
             
             for i, num in enumerate(reversed(ultimos)):
                 props = obtener_propiedades_numero(num)
