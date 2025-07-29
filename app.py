@@ -26,7 +26,7 @@ def inicializar_session_state():
     if 'parametros' not in st.session_state:
         st.session_state.parametros = {
             'patron_basico_consecutivos': 5,
-            'docenas_consecutivos': 10,
+            'docenas_consecutivos': 15,
             'numeros_especificos_consecutivos': 8
         }
 
