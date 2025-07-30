@@ -25,9 +25,9 @@ def inicializar_session_state():
     
     if 'parametros' not in st.session_state:
         st.session_state.parametros = {
-            'patron_basico_consecutivos': 3,  # Cambiar de 5 a 3 para pruebas
-            'docenas_consecutivos': 6,        # Cambiar de 15 a 6 para pruebas  
-            'numeros_especificos_consecutivos': 3  # Cambiar de 8 a 3 para pruebas
+            'patron_basico_consecutivos': 5,  # Cambiar de 5 a 3 para pruebas
+            'docenas_consecutivos': 9,        # Cambiar de 15 a 6 para pruebas  
+            'numeros_especificos_consecutivos': 7  # Cambiar de 8 a 3 para pruebas
         }
 
 def obtener_propiedades_numero(numero):
