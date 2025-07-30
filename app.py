@@ -65,20 +65,31 @@ def detectar_patron_basico(numeros, propiedad, consecutivos_requeridos):
     contador = 0
     patron_actual = None
     
+    # Debug: imprimir información
+    print(f"DEBUG: Analizando {len(numeros)} números para propiedad '{propiedad}'")
+    print(f"DEBUG: Últimos 5 números: {numeros[-5:] if len(numeros) >= 5 else numeros}")
+    
     for i in range(len(numeros) - 1, -1, -1):
         prop = obtener_propiedades_numero(numeros[i])[propiedad]
+        print(f"DEBUG: Número {numeros[i]} -> {propiedad}: {prop}")
         
         # Saltar números especiales (0, 00)
         if prop == 'Especial':
+            print(f"DEBUG: Saltando número especial {numeros[i]}")
             continue
             
         if patron_actual is None:
             patron_actual = prop
             contador = 1
+            print(f"DEBUG: Iniciando patrón {patron_actual}, contador = {contador}")
         elif prop == patron_actual:
             contador += 1
+            print(f"DEBUG: Continuando patrón {patron_actual}, contador = {contador}")
         else:
+            print(f"DEBUG: Patrón roto. Era {patron_actual}, ahora {prop}")
             break
+    
+    print(f"DEBUG: Resultado final - Patrón: {patron_actual}, Contador: {contador}, Requeridos: {consecutivos_requeridos}")
     
     if contador >= consecutivos_requeridos:
         return patron_actual, contador
@@ -145,6 +156,9 @@ def generar_recomendaciones(numeros, parametros):
     """Genera recomendaciones basadas en los patrones detectados"""
     recomendaciones = []
     
+    print(f"DEBUG: Generando recomendaciones para {len(numeros)} números")
+    print(f"DEBUG: Parámetros: {parametros}")
+    
     # Patrones básicos
     patrones_basicos = ['color', 'par_impar', 'rango']
     nombres_patrones = {
@@ -163,6 +177,7 @@ def generar_recomendaciones(numeros, parametros):
     }
     
     for patron in patrones_basicos:
+        print(f"DEBUG: Analizando patrón {patron}")
         patron_actual, contador = detectar_patron_basico(
             numeros, patron, parametros['patron_basico_consecutivos']
         )
@@ -171,6 +186,7 @@ def generar_recomendaciones(numeros, parametros):
             recomendacion = f"🎯 **APUESTA A: {contrarios[patron_actual]}**"
             detalle = f"Han salido {contador} {nombres_patrones[patron]} consecutivos ({patron_actual})"
             recomendaciones.append((recomendacion, detalle, 'patron_basico'))
+            print(f"DEBUG: ¡Recomendación agregada! {recomendacion}")
     
     # Patrón de docenas
     docenas_actuales, contador_docenas, docena_faltante = detectar_patron_docenas(
@@ -181,6 +197,7 @@ def generar_recomendaciones(numeros, parametros):
         recomendacion = f"🎯 **APUESTA A: Docena {docena_faltante}**"
         detalle = f"Han salido {contador_docenas} números consecutivos en Docenas {docenas_actuales}"
         recomendaciones.append((recomendacion, detalle, 'docenas'))
+        print(f"DEBUG: ¡Recomendación de docena agregada! {recomendacion}")
     
     # Patrón de posibilidades
     posibilidad_actual, contador_pos = detectar_patron_posibilidades(
@@ -192,7 +209,9 @@ def generar_recomendaciones(numeros, parametros):
         recomendacion = f"🎯 **APUESTA A: {contrario_pos}**"
         detalle = f"Han salido {contador_pos} números consecutivos de {posibilidad_actual}"
         recomendaciones.append((recomendacion, detalle, 'posibilidades'))
+        print(f"DEBUG: ¡Recomendación de posibilidad agregada! {recomendacion}")
     
+    print(f"DEBUG: Total de recomendaciones generadas: {len(recomendaciones)}")
     return recomendaciones
 
 def main():
@@ -238,6 +257,11 @@ def main():
         
         st.markdown("---")
         
+        # DEBUG: Mostrar información del estado actual
+        st.subheader("🔍 Debug Info")
+        st.write(f"Números registrados: {len(st.session_state.numeros_registrados)}")
+        st.write(f"Últimos 5: {st.session_state.numeros_registrados[-5:] if len(st.session_state.numeros_registrados) >= 5 else st.session_state.numeros_registrados}")
+        
         if st.button("🗑️ Limpiar Historial", type="secondary"):
             st.session_state.numeros_registrados = []
             st.success("Historial limpiado!")
@@ -278,37 +302,27 @@ def main():
                 st.success(f"Número {numero_input} agregado!")
                 st.rerun()
 
-        # Opción para borrar número específico
-        if st.session_state.numeros_registrados:
-            st.markdown("---")
-            st.subheader("🎯 Editar Historial")
-            
-            with st.expander("Borrar número específico"):
-                if len(st.session_state.numeros_registrados) > 0:
-                    # Mostrar los últimos 10 números con opción de borrar
-                    st.write("Selecciona el número a borrar:")
-                    
-                    ultimos_10 = st.session_state.numeros_registrados[-10:]
-                    indices_ultimos_10 = list(range(len(st.session_state.numeros_registrados) - 10, len(st.session_state.numeros_registrados)))
-                    
-                    for i, (indice_real, num) in enumerate(zip(indices_ultimos_10, ultimos_10)):
-                        if indice_real >= 0:  # Solo mostrar si el índice es válido
-                            props = obtener_propiedades_numero(num)
-                            color_emoji = "🔴" if props['color'] == 'Rojo' else "⚫" if props['color'] == 'Negro' else "🟢"
-                            
-                            col1, col2 = st.columns([3, 1])
-                            with col1:
-                                st.write(f"{indice_real + 1}. {color_emoji} **{num}** - {props['color']}")
-                            with col2:
-                                if st.button("❌", key=f"delete_{indice_real}", help=f"Borrar número {num}"):
-                                    st.session_state.numeros_registrados.pop(indice_real)
-                                    st.success(f"Número {num} borrado!")
-                                    st.rerun()
+        # Botones de prueba para generar patrones rápidamente
+        st.markdown("---")
+        st.subheader("🧪 Pruebas Rápidas")
         
+        col_test1, col_test2 = st.columns(2)
+        with col_test1:
+            if st.button("3 Rojos", help="Agregar 1, 3, 5 (3 rojos consecutivos)"):
+                st.session_state.numeros_registrados.extend([1, 3, 5])
+                st.success("3 rojos agregados!")
+                st.rerun()
+        
+        with col_test2:
+            if st.button("3 Negros", help="Agregar 2, 4, 6 (3 negros consecutivos)"):
+                st.session_state.numeros_registrados.extend([2, 4, 6])
+                st.success("3 negros agregados!")
+                st.rerun()
+
         # Mostrar últimos números
         if st.session_state.numeros_registrados:
             st.subheader("🔢 Últimos 10 Números")
-            ultimos = st.session_state.numeros_registrados[-20:]
+            ultimos = st.session_state.numeros_registrados[-10:]
             
             for i, num in enumerate(reversed(ultimos)):
                 props = obtener_propiedades_numero(num)
@@ -318,11 +332,29 @@ def main():
     with col2:
         st.subheader("🎯 Recomendaciones de Apuesta")
         
+        # DEBUG: Mostrar siempre información de debug
+        if st.session_state.numeros_registrados:
+            with st.expander("🔍 Información de Debug", expanded=False):
+                st.write(f"**Total números:** {len(st.session_state.numeros_registrados)}")
+                st.write(f"**Parámetros actuales:** {st.session_state.parametros}")
+                
+                if len(st.session_state.numeros_registrados) >= 3:
+                    ultimos_5 = st.session_state.numeros_registrados[-5:]
+                    st.write(f"**Últimos 5 números:** {ultimos_5}")
+                    
+                    # Mostrar propiedades de los últimos números
+                    for num in ultimos_5:
+                        props = obtener_propiedades_numero(num)
+                        st.write(f"Número {num}: {props}")
+        
         if len(st.session_state.numeros_registrados) >= 3:
             recomendaciones = generar_recomendaciones(
                 st.session_state.numeros_registrados,
                 st.session_state.parametros
             )
+            
+            # Siempre mostrar el resultado de la generación
+            st.write(f"**Recomendaciones encontradas:** {len(recomendaciones)}")
             
             if recomendaciones:
                 for recomendacion, detalle, tipo in recomendaciones:
@@ -337,6 +369,18 @@ def main():
                     st.markdown("---")
             else:
                 st.info("🔍 No se detectaron patrones. Sigue registrando números...")
+                
+                # Mostrar por qué no hay recomendaciones
+                with st.expander("¿Por qué no hay recomendaciones?"):
+                    if len(st.session_state.numeros_registrados) >= 3:
+                        # Analizar cada patrón
+                        for patron in ['color', 'par_impar', 'rango']:
+                            patron_actual, contador = detectar_patron_basico(
+                                st.session_state.numeros_registrados, 
+                                patron, 
+                                st.session_state.parametros['patron_basico_consecutivos']
+                            )
+                            st.write(f"**{patron.replace('_', '/')}:** {contador} consecutivos (necesitas {st.session_state.parametros['patron_basico_consecutivos']})")
         else:
             st.info("📊 Registra al menos 3 números para comenzar el análisis")
     
