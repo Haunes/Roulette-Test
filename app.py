@@ -268,19 +268,62 @@ def main():
     
     with col1:
         st.subheader("📝 Registrar Número")
-        
-        numero_input = st.number_input(
-            "Ingresa el número que salió:",
-            min_value=0,
-            max_value=37,
-            value=0,
-            help="0 = 0, 37 = 00 (doble cero)"
-        )
-        
-        if st.button("➕ Agregar Número", type="primary"):
-            st.session_state.numeros_registrados.append(numero_input)
-            st.success(f"Número {numero_input} agregado!")
-            st.rerun()
+
+        # Crear un formulario para permitir Enter
+        with st.form("numero_form", clear_on_submit=True):
+            numero_input = st.number_input(
+                "Ingresa el número que salió:",
+                min_value=0,
+                max_value=37,
+                value=0,
+                help="0 = 0, 37 = 00 (doble cero). Presiona Enter o el botón para agregar."
+            )
+            
+            col_btn1, col_btn2 = st.columns(2)
+            
+            with col_btn1:
+                submitted = st.form_submit_button("➕ Agregar", type="primary", use_container_width=True)
+            
+            with col_btn2:
+                if st.form_submit_button("🗑️ Borrar Último", type="secondary", use_container_width=True):
+                    if st.session_state.numeros_registrados:
+                        numero_borrado = st.session_state.numeros_registrados.pop()
+                        st.success(f"Número {numero_borrado} borrado!")
+                        st.rerun()
+                    else:
+                        st.warning("No hay números para borrar")
+            
+            if submitted:
+                st.session_state.numeros_registrados.append(numero_input)
+                st.success(f"Número {numero_input} agregado!")
+                st.rerun()
+
+        # Opción para borrar número específico
+        if st.session_state.numeros_registrados:
+            st.markdown("---")
+            st.subheader("🎯 Editar Historial")
+            
+            with st.expander("Borrar número específico"):
+                if len(st.session_state.numeros_registrados) > 0:
+                    # Mostrar los últimos 10 números con opción de borrar
+                    st.write("Selecciona el número a borrar:")
+                    
+                    ultimos_10 = st.session_state.numeros_registrados[-10:]
+                    indices_ultimos_10 = list(range(len(st.session_state.numeros_registrados) - 10, len(st.session_state.numeros_registrados)))
+                    
+                    for i, (indice_real, num) in enumerate(zip(indices_ultimos_10, ultimos_10)):
+                        if indice_real >= 0:  # Solo mostrar si el índice es válido
+                            props = obtener_propiedades_numero(num)
+                            color_emoji = "🔴" if props['color'] == 'Rojo' else "⚫" if props['color'] == 'Negro' else "🟢"
+                            
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                st.write(f"{indice_real + 1}. {color_emoji} **{num}** - {props['color']}")
+                            with col2:
+                                if st.button("❌", key=f"delete_{indice_real}", help=f"Borrar número {num}"):
+                                    st.session_state.numeros_registrados.pop(indice_real)
+                                    st.success(f"Número {num} borrado!")
+                                    st.rerun()
         
         # Mostrar últimos números
         if st.session_state.numeros_registrados:
