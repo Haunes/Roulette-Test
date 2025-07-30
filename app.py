@@ -25,9 +25,9 @@ def inicializar_session_state():
     
     if 'parametros' not in st.session_state:
         st.session_state.parametros = {
-            'patron_basico_consecutivos': 5,
-            'docenas_consecutivos': 15,
-            'numeros_especificos_consecutivos': 8
+            'patron_basico_consecutivos': 3,  # Cambiar de 5 a 3 para pruebas
+            'docenas_consecutivos': 6,        # Cambiar de 15 a 6 para pruebas  
+            'numeros_especificos_consecutivos': 3  # Cambiar de 8 a 3 para pruebas
         }
 
 def obtener_propiedades_numero(numero):
@@ -61,27 +61,26 @@ def detectar_patron_basico(numeros, propiedad, consecutivos_requeridos):
     if len(numeros) < consecutivos_requeridos:
         return None, 0
     
-    ultimos_numeros = numeros[-consecutivos_requeridos:]
-    propiedades = [obtener_propiedades_numero(num)[propiedad] for num in ultimos_numeros]
+    # Contar consecutivos desde el final hacia atrás
+    contador = 0
+    patron_actual = None
     
-    # Filtrar números especiales (0, 00)
-    propiedades_validas = [p for p in propiedades if p != 'Especial']
-    
-    if len(propiedades_validas) < consecutivos_requeridos:
-        return None, 0
-    
-    if len(set(propiedades_validas)) == 1:
-        patron_actual = propiedades_validas[0]
+    for i in range(len(numeros) - 1, -1, -1):
+        prop = obtener_propiedades_numero(numeros[i])[propiedad]
         
-        # Contar cuántos consecutivos llevamos
-        contador = 0
-        for i in range(len(numeros) - 1, -1, -1):
-            prop = obtener_propiedades_numero(numeros[i])[propiedad]
-            if prop == patron_actual and prop != 'Especial':
-                contador += 1
-            else:
-                break
-        
+        # Saltar números especiales (0, 00)
+        if prop == 'Especial':
+            continue
+            
+        if patron_actual is None:
+            patron_actual = prop
+            contador = 1
+        elif prop == patron_actual:
+            contador += 1
+        else:
+            break
+    
+    if contador >= consecutivos_requeridos:
         return patron_actual, contador
     
     return None, 0
@@ -91,43 +90,25 @@ def detectar_patron_docenas(numeros, consecutivos_requeridos):
     if len(numeros) < consecutivos_requeridos:
         return None, 0, []
     
-    ultimos_numeros = numeros[-consecutivos_requeridos:]
-    docenas = []
+    # Obtener las docenas de los últimos números (excluyendo 0 y 00)
+    docenas_recientes = []
+    for i in range(len(numeros) - 1, -1, -1):
+        if numeros[i] not in [0, 37]:
+            docena = (numeros[i] - 1) // 12 + 1
+            docenas_recientes.append(docena)
+        
+        if len(docenas_recientes) >= consecutivos_requeridos:
+            break
     
-    for num in ultimos_numeros:
-        if num == 0 or num == 37:
-            continue
-        docenas.append((num - 1) // 12 + 1)
-    
-    if len(docenas) < consecutivos_requeridos:
+    if len(docenas_recientes) < consecutivos_requeridos:
         return None, 0, []
     
-    docenas_unicas = set(docenas)
+    # Verificar si solo aparecen 2 docenas en los últimos números
+    docenas_unicas = set(docenas_recientes)
     
-    # Verificar si solo han salido 2 docenas
     if len(docenas_unicas) == 2:
-        # Contar consecutivos
-        contador = 0
-        docenas_actuales = set()
-        
-        for i in range(len(numeros) - 1, -1, -1):
-            if numeros[i] == 0 or numeros[i] == 37:
-                continue
-            docena = (numeros[i] - 1) // 12 + 1
-            if len(docenas_actuales) == 0:
-                docenas_actuales.add(docena)
-                contador += 1
-            elif docena in docenas_actuales or len(docenas_actuales) == 1:
-                docenas_actuales.add(docena)
-                contador += 1
-                if len(docenas_actuales) > 2:
-                    break
-            else:
-                break
-        
-        if contador >= consecutivos_requeridos and len(docenas_actuales) == 2:
-            docena_faltante = ({1, 2, 3} - docenas_actuales).pop()
-            return list(docenas_actuales), contador, docena_faltante
+        docena_faltante = ({1, 2, 3} - docenas_unicas).pop()
+        return list(docenas_unicas), len(docenas_recientes), docena_faltante
     
     return None, 0, []
 
@@ -136,27 +117,26 @@ def detectar_patron_posibilidades(numeros, consecutivos_requeridos):
     if len(numeros) < consecutivos_requeridos:
         return None, 0
     
-    ultimos_numeros = numeros[-consecutivos_requeridos:]
-    posibilidades = [obtener_propiedades_numero(num)['posibilidad'] for num in ultimos_numeros]
+    # Contar consecutivos desde el final hacia atrás
+    contador = 0
+    patron_actual = None
     
-    # Filtrar números que no pertenecen a ninguna posibilidad
-    posibilidades_validas = [p for p in posibilidades if p != 'Ninguna']
-    
-    if len(posibilidades_validas) < consecutivos_requeridos:
-        return None, 0
-    
-    if len(set(posibilidades_validas)) == 1:
-        patron_actual = posibilidades_validas[0]
+    for i in range(len(numeros) - 1, -1, -1):
+        prop = obtener_propiedades_numero(numeros[i])['posibilidad']
         
-        # Contar consecutivos
-        contador = 0
-        for i in range(len(numeros) - 1, -1, -1):
-            prop = obtener_propiedades_numero(numeros[i])['posibilidad']
-            if prop == patron_actual and prop != 'Ninguna':
-                contador += 1
-            else:
-                break
-        
+        # Saltar números que no pertenecen a ninguna posibilidad
+        if prop == 'Ninguna':
+            continue
+            
+        if patron_actual is None:
+            patron_actual = prop
+            contador = 1
+        elif prop == patron_actual:
+            contador += 1
+        else:
+            break
+    
+    if contador >= consecutivos_requeridos:
         return patron_actual, contador
     
     return None, 0
