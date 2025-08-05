@@ -61,11 +61,10 @@ def detectar_patron_basico(numeros, propiedad, consecutivos_requeridos):
     if len(numeros) < consecutivos_requeridos:
         return None, 0
     
-    # Contar consecutivos desde el final hacia atrás
     contador = 0
     patron_actual = None
     
-    # Debug: imprimir información
+    # Debug
     print(f"DEBUG: Analizando {len(numeros)} números para propiedad '{propiedad}'")
     print(f"DEBUG: Últimos 5 números: {numeros[-5:] if len(numeros) >= 5 else numeros}")
     
@@ -73,9 +72,9 @@ def detectar_patron_basico(numeros, propiedad, consecutivos_requeridos):
         prop = obtener_propiedades_numero(numeros[i])[propiedad]
         print(f"DEBUG: Número {numeros[i]} -> {propiedad}: {prop}")
         
-        # Saltar números especiales (0, 00)
-        if prop == 'Especial':
-            print(f"DEBUG: Saltando número especial {numeros[i]}")
+        # Saltar especiales y el verde para color (0 y 00)
+        if prop == 'Especial' or (propiedad == 'color' and prop == 'Verde'):
+            print(f"DEBUG: Saltando número especial/verde {numeros[i]} para propiedad '{propiedad}'")
             continue
             
         if patron_actual is None:
@@ -95,7 +94,7 @@ def detectar_patron_basico(numeros, propiedad, consecutivos_requeridos):
         return patron_actual, contador
     
     return None, 0
-
+    
 def detectar_patron_docenas(numeros, consecutivos_requeridos):
     """Detecta patrones de docenas"""
     if len(numeros) < consecutivos_requeridos:
