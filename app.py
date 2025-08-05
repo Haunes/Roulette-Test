@@ -64,7 +64,6 @@ def detectar_patron_basico(numeros, propiedad, consecutivos_requeridos):
     contador = 0
     patron_actual = None
     
-    # Debug
     print(f"DEBUG: Analizando {len(numeros)} números para propiedad '{propiedad}'")
     print(f"DEBUG: Últimos 5 números: {numeros[-5:] if len(numeros) >= 5 else numeros}")
     
@@ -72,10 +71,10 @@ def detectar_patron_basico(numeros, propiedad, consecutivos_requeridos):
         prop = obtener_propiedades_numero(numeros[i])[propiedad]
         print(f"DEBUG: Número {numeros[i]} -> {propiedad}: {prop}")
         
-        # Saltar especiales y el verde para color (0 y 00)
+        # 0/00 rompen la racha:
         if prop == 'Especial' or (propiedad == 'color' and prop == 'Verde'):
-            print(f"DEBUG: Saltando número especial/verde {numeros[i]} para propiedad '{propiedad}'")
-            continue
+            print(f"DEBUG: {numeros[i]} rompe la racha para '{propiedad}'. Reiniciar.")
+            break  # <- corte de la racha
             
         if patron_actual is None:
             patron_actual = prop
@@ -89,23 +88,24 @@ def detectar_patron_basico(numeros, propiedad, consecutivos_requeridos):
             break
     
     print(f"DEBUG: Resultado final - Patrón: {patron_actual}, Contador: {contador}, Requeridos: {consecutivos_requeridos}")
-    
     if contador >= consecutivos_requeridos:
         return patron_actual, contador
-    
     return None, 0
     
 def detectar_patron_docenas(numeros, consecutivos_requeridos):
-    """Detecta patrones de docenas"""
+    """Detecta patrones de docenas (el 0/00 rompe la racha)"""
     if len(numeros) < consecutivos_requeridos:
         return None, 0, []
     
-    # Obtener las docenas de los últimos números (excluyendo 0 y 00)
     docenas_recientes = []
     for i in range(len(numeros) - 1, -1, -1):
-        if numeros[i] not in [0, 37]:
-            docena = (numeros[i] - 1) // 12 + 1
-            docenas_recientes.append(docena)
+        # 0/00 ROMPEN la racha
+        if numeros[i] in [0, 37]:
+            print(f"DEBUG: {numeros[i]} (0/00) rompe la racha de docenas.")
+            break
+        
+        docena = (numeros[i] - 1) // 12 + 1
+        docenas_recientes.append(docena)
         
         if len(docenas_recientes) >= consecutivos_requeridos:
             break
@@ -113,31 +113,35 @@ def detectar_patron_docenas(numeros, consecutivos_requeridos):
     if len(docenas_recientes) < consecutivos_requeridos:
         return None, 0, []
     
-    # Verificar si solo aparecen 2 docenas en los últimos números
     docenas_unicas = set(docenas_recientes)
-    
     if len(docenas_unicas) == 2:
         docena_faltante = ({1, 2, 3} - docenas_unicas).pop()
         return list(docenas_unicas), len(docenas_recientes), docena_faltante
     
     return None, 0, []
 
+
 def detectar_patron_posibilidades(numeros, consecutivos_requeridos):
     """Detecta patrones de posibilidades específicas"""
     if len(numeros) < consecutivos_requeridos:
         return None, 0
     
-    # Contar consecutivos desde el final hacia atrás
     contador = 0
     patron_actual = None
     
     for i in range(len(numeros) - 1, -1, -1):
         prop = obtener_propiedades_numero(numeros[i])['posibilidad']
         
-        # Saltar números que no pertenecen a ninguna posibilidad
+        # 0/00 (Ninguna) rompen la racha
         if prop == 'Ninguna':
-            continue
-            
+            # Si veníamos contando, el 0/00 corta el conteo actual
+            if contador > 0:
+                print(f"DEBUG: {numeros[i]} rompe la racha de {patron_actual} (posibilidades).")
+                break
+            else:
+                print(f"DEBUG: {numeros[i]} es 'Ninguna' y está al final. No hay racha activa.")
+                break  # también corta si es el último número
+
         if patron_actual is None:
             patron_actual = prop
             contador = 1
@@ -148,8 +152,8 @@ def detectar_patron_posibilidades(numeros, consecutivos_requeridos):
     
     if contador >= consecutivos_requeridos:
         return patron_actual, contador
-    
     return None, 0
+
 
 def generar_recomendaciones(numeros, parametros):
     """Genera recomendaciones basadas en los patrones detectados"""
